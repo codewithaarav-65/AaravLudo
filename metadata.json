@@ -1,0 +1,6 @@
+{
+  "name": "Ludo By aarav",
+  "description": "Welcome to the next generation of Ludo! Ludo By Aarav brings the timeless tabletop classic right to your fingertips—100% free to play.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

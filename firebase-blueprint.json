@@ -1,0 +1,252 @@
+{
+  "entities": {
+    "MatchHistoryRecord": {
+      "title": "MatchHistoryRecord",
+      "description": "Cloud-synced match history record scoped to a specific user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique match record ID."
+        },
+        "userId": {
+          "type": "string",
+          "description": "UID of the user who owns this match record."
+        },
+        "gameMode": {
+          "type": "string",
+          "description": "Mode played (e.g., 1P_GEMINI, 2P_LOCAL, 3P_LOCAL, 4P_LOCAL, ONLINE_TOURNAMENT)."
+        },
+        "winnerName": {
+          "type": "string",
+          "description": "Display name of the winning player."
+        },
+        "playerWon": {
+          "type": "boolean",
+          "description": "Whether the authenticated user won this match."
+        },
+        "turnsPlayed": {
+          "type": "integer",
+          "description": "Total number of turns taken in the match."
+        },
+        "capturesMade": {
+          "type": "integer",
+          "description": "Number of opponent tokens captured by the player."
+        },
+        "aiDifficulty": {
+          "type": "string",
+          "description": "Adaptive AI difficulty level during the match."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when record was created via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when record was last updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "gameMode",
+        "winnerName",
+        "playerWon",
+        "turnsPlayed",
+        "capturesMade",
+        "aiDifficulty",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Global leaderboard entry tracking player wins, games played, and skill rating.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated user UID."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Player display name."
+        },
+        "wins": {
+          "type": "integer",
+          "description": "Total matches won."
+        },
+        "gamesPlayed": {
+          "type": "integer",
+          "description": "Total matches completed."
+        },
+        "captures": {
+          "type": "integer",
+          "description": "Total opponent pieces captured."
+        },
+        "rating": {
+          "type": "integer",
+          "description": "Global competitive Elo/skill rating."
+        },
+        "aiTier": {
+          "type": "string",
+          "description": "Current adaptive Gemini AI tier unlocked."
+        },
+        "isGlobal": {
+          "type": "boolean",
+          "description": "Flag used for aligned global leaderboard list queries."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when entry was created via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when entry was updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "wins",
+        "gamesPlayed",
+        "captures",
+        "rating",
+        "aiTier",
+        "isGlobal",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TournamentLobby": {
+      "title": "TournamentLobby",
+      "description": "Real-time multiplayer tournament lobby with custom rules and invite-only support.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Tournament document ID."
+        },
+        "hostUid": {
+          "type": "string",
+          "description": "UID of the tournament creator."
+        },
+        "hostName": {
+          "type": "string",
+          "description": "Display name of the host."
+        },
+        "title": {
+          "type": "string",
+          "description": "Tournament title."
+        },
+        "inviteCode": {
+          "type": "string",
+          "description": "Invite code for joining lobby."
+        },
+        "isInviteOnly": {
+          "type": "boolean",
+          "description": "True if private invite-only lobby, false if public tournament."
+        },
+        "maxPlayers": {
+          "type": "integer",
+          "description": "Maximum players allowed (2, 3, or 4)."
+        },
+        "customRuleSafeZones": {
+          "type": "boolean",
+          "description": "Whether star safe zones protect tokens from capture."
+        },
+        "customRuleQuickStart": {
+          "type": "boolean",
+          "description": "Whether each player starts with 1 token already out of the yard."
+        },
+        "customRuleCaptureBonus": {
+          "type": "boolean",
+          "description": "Whether capturing an opponent token grants an extra roll."
+        },
+        "playerUids": {
+          "type": "array",
+          "description": "Bounded list (max 4) of participant UIDs."
+        },
+        "playerNames": {
+          "type": "array",
+          "description": "Bounded list (max 4) of participant display names."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["waiting", "in_progress", "completed"],
+          "description": "Current tournament status."
+        },
+        "currentTurnIndex": {
+          "type": "integer",
+          "description": "Index of active player turn (0 to 3)."
+        },
+        "lastDiceRoll": {
+          "type": "integer",
+          "description": "Most recent dice value rolled (0 to 6)."
+        },
+        "tokenPositions": {
+          "type": "array",
+          "description": "Bounded list of 16 integers representing the board positions of all 4 players' 4 tokens."
+        },
+        "lastActionText": {
+          "type": "string",
+          "description": "Summary of the latest move or tournament event."
+        },
+        "winnerName": {
+          "type": "string",
+          "description": "Name of the winner when status is completed."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "id",
+        "hostUid",
+        "hostName",
+        "title",
+        "inviteCode",
+        "isInviteOnly",
+        "maxPlayers",
+        "customRuleSafeZones",
+        "customRuleQuickStart",
+        "customRuleCaptureBonus",
+        "playerUids",
+        "playerNames",
+        "status",
+        "currentTurnIndex",
+        "lastDiceRoll",
+        "tokenPositions",
+        "lastActionText",
+        "winnerName",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/match_history/{matchId}": {
+      "schema": { "$ref": "#/entities/MatchHistoryRecord" },
+      "description": "Per-user cloud-synced match history records."
+    },
+    "/leaderboard/{userId}": {
+      "schema": { "$ref": "#/entities/LeaderboardEntry" },
+      "description": "Global leaderboard rankings indexed by userId."
+    },
+    "/tournaments/{tournamentId}": {
+      "schema": { "$ref": "#/entities/TournamentLobby" },
+      "description": "Real-time multiplayer tournament rooms and invite-only lobbies."
+    }
+  }
+}

@@ -1,0 +1,206 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidMatchHistoryRecord(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.gameMode is string && data.gameMode.size() >= 1 && data.gameMode.size() <= 40 &&
+             data.winnerName is string && data.winnerName.size() >= 1 && data.winnerName.size() <= 60 &&
+             data.playerWon is bool &&
+             data.turnsPlayed is int && data.turnsPlayed >= 1 && data.turnsPlayed <= 10000 &&
+             data.capturesMade is int && data.capturesMade >= 0 && data.capturesMade <= 1000 &&
+             data.aiDifficulty is string && data.aiDifficulty.size() >= 1 && data.aiDifficulty.size() <= 40 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidLeaderboardEntry(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 60 &&
+             data.wins is int && data.wins >= 0 && data.wins <= 1000000 &&
+             data.gamesPlayed is int && data.gamesPlayed >= 0 && data.gamesPlayed <= 1000000 &&
+             data.captures is int && data.captures >= 0 && data.captures <= 1000000 &&
+             data.rating is int && data.rating >= 0 && data.rating <= 100000 &&
+             data.aiTier is string && data.aiTier.size() >= 1 && data.aiTier.size() <= 40 &&
+             data.isGlobal is bool && data.isGlobal == true &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidTournamentLobby(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.hostUid is string && data.hostUid.size() >= 1 && data.hostUid.size() <= 128 &&
+             data.hostName is string && data.hostName.size() >= 1 && data.hostName.size() <= 60 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 80 &&
+             data.inviteCode is string && data.inviteCode.size() >= 4 && data.inviteCode.size() <= 20 &&
+             data.isInviteOnly is bool &&
+             data.maxPlayers is int && data.maxPlayers >= 2 && data.maxPlayers <= 4 &&
+             data.customRuleSafeZones is bool &&
+             data.customRuleQuickStart is bool &&
+             data.customRuleCaptureBonus is bool &&
+             data.playerUids is list && data.playerUids.size() >= 1 && data.playerUids.size() <= 4 &&
+             data.playerUids[0] is string && data.playerUids[0].size() <= 128 &&
+             data.playerNames is list && data.playerNames.size() >= 1 && data.playerNames.size() <= 4 &&
+             data.playerNames[0] is string && data.playerNames[0].size() <= 60 &&
+             data.status is string && data.status in ['waiting', 'in_progress', 'completed'] &&
+             data.currentTurnIndex is int && data.currentTurnIndex >= 0 && data.currentTurnIndex <= 3 &&
+             data.lastDiceRoll is int && data.lastDiceRoll >= 0 && data.lastDiceRoll <= 6 &&
+             data.tokenPositions is list && data.tokenPositions.size() == 16 && data.tokenPositions[0] is int &&
+             data.lastActionText is string && data.lastActionText.size() >= 1 && data.lastActionText.size() <= 200 &&
+             data.winnerName is string && data.winnerName.size() <= 60 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 4. Per-User Cloud Match History (/users/{userId}/match_history/{matchId})
+    match /users/{userId}/match_history/{matchId} {
+      allow get: if isSignedIn() && isValidId(userId) && isValidId(matchId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(matchId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().id == matchId &&
+                       incoming().keys().hasAll([
+                         'id', 'userId', 'gameMode', 'winnerName', 'playerWon',
+                         'turnsPlayed', 'capturesMade', 'aiDifficulty', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'id', 'userId', 'gameMode', 'winnerName', 'playerWon',
+                         'turnsPlayed', 'capturesMade', 'aiDifficulty', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidMatchHistoryRecord(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(matchId) &&
+                       isValidMatchHistoryRecord(incoming()) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == existing().userId &&
+                       incoming().id == existing().id &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'winnerName', 'playerWon', 'turnsPlayed', 'capturesMade', 'aiDifficulty', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && isValidId(matchId) && request.auth.uid == userId;
+    }
+
+    // 5. Global Leaderboard (/leaderboard/{userId})
+    match /leaderboard/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && existing().isGlobal == true;
+      allow list: if isSignedIn() && existing().isGlobal == true;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'wins', 'gamesPlayed', 'captures',
+                         'rating', 'aiTier', 'isGlobal', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'wins', 'gamesPlayed', 'captures',
+                         'rating', 'aiTier', 'isGlobal', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidLeaderboardEntry(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidLeaderboardEntry(incoming()) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'displayName', 'wins', 'gamesPlayed', 'captures', 'rating', 'aiTier', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // 6. Real-Time Multiplayer Tournaments & Invite-Only Lobbies (/tournaments/{tournamentId})
+    match /tournaments/{tournamentId} {
+      allow get: if isSignedIn() && isValidId(tournamentId) &&
+                    existing().status in ['waiting', 'in_progress', 'completed'];
+
+      allow list: if isSignedIn() &&
+                     (existing().isInviteOnly == false || request.auth.uid in existing().playerUids);
+
+      allow create: if isSignedIn() &&
+                       isValidId(tournamentId) &&
+                       incoming().id == tournamentId &&
+                       incoming().hostUid == request.auth.uid &&
+                       incoming().status == 'waiting' &&
+                       request.auth.uid in incoming().playerUids &&
+                       incoming().keys().hasAll([
+                         'id', 'hostUid', 'hostName', 'title', 'inviteCode', 'isInviteOnly',
+                         'maxPlayers', 'customRuleSafeZones', 'customRuleQuickStart', 'customRuleCaptureBonus',
+                         'playerUids', 'playerNames', 'status', 'currentTurnIndex', 'lastDiceRoll',
+                         'tokenPositions', 'lastActionText', 'winnerName', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'id', 'hostUid', 'hostName', 'title', 'inviteCode', 'isInviteOnly',
+                         'maxPlayers', 'customRuleSafeZones', 'customRuleQuickStart', 'customRuleCaptureBonus',
+                         'playerUids', 'playerNames', 'status', 'currentTurnIndex', 'lastDiceRoll',
+                         'tokenPositions', 'lastActionText', 'winnerName', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidTournamentLobby(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(tournamentId) &&
+                       isValidTournamentLobby(incoming()) &&
+                       existing().status != 'completed' &&
+                       incoming().id == existing().id &&
+                       incoming().hostUid == existing().hostUid &&
+                       incoming().inviteCode == existing().inviteCode &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         // Action 1: Join waiting tournament lobby
+                         (
+                           existing().status == 'waiting' &&
+                           request.auth.uid in incoming().playerUids &&
+                           incoming().playerUids.size() <= existing().maxPlayers &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'playerUids', 'playerNames', 'status', 'lastActionText', 'updatedAt'
+                           ])
+                         ) ||
+                         // Action 2: Gameplay move, dice roll, or completion by participant
+                         (
+                           request.auth.uid in existing().playerUids &&
+                           incoming().playerUids == existing().playerUids &&
+                           incoming().diff(existing()).affectedKeys().hasOnly([
+                             'status', 'currentTurnIndex', 'lastDiceRoll', 'tokenPositions',
+                             'lastActionText', 'winnerName', 'updatedAt'
+                           ])
+                         )
+                       );
+
+      allow delete: if isSignedIn() && isValidId(tournamentId) && existing().hostUid == request.auth.uid;
+    }
+  }
+}

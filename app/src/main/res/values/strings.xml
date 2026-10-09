@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Ludo.AI</string>
+    <string name="app_subtitle">Welcome to the next generation of Ludo! Ludo Studio brings the timeless tabletop classic right to your fingertips—100% free to play.</string>
+    <string name="cd_hero_banner">Ludo Royale luxury tabletop game banner</string>
+    <string name="cd_roll_dice">Roll the dice</string>
+    <string name="cd_save_game">Save offline game progress</string>
+    <string name="cd_table_chat">Open local table chat</string>
+    <string name="cd_ai_coach">Open Gemini AI strategy coach</string>
+    <string name="cd_sign_out">Sign out of account</string>
+    <string name="nav_play">Local &amp; AI</string>
+    <string name="nav_tournaments">Tournaments</string>
+    <string name="nav_leaderboards">Leaderboards</string>
+    <string name="nav_gemini_chat">Gemini Coach</string>
+    <string name="cd_sign_in">Sign in with Google</string>
+</resources>
